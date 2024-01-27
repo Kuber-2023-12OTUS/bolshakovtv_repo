@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: homework-pod
+  namespace: homework
+  labels:
+    app: homework-pod
+spec:
+  containers:
+  - name: nginx
+    image: nginx:latest
+    lifecycle:
+      postStart:
+        exec:
+          command:
+            - "/bin/sh"
+            - "-c"
+            - |
+              rm -f /usr/share/nginx/html/index.html
+              find /homework -type f -exec ln -s {} /usr/share/nginx/html \;
+      preStop:
+        exec:
+          command: ["/bin/sh", "-c", "rm -f /homework/index.html"]
+    ports:
+    - containerPort: 80
+    volumeMounts:
+    - name: workdir
+      mountPath: "/homework"
+  initContainers:
+  - name: init-container
+    image: busybox:latest
+    command: ['sh', '-c', "wget -O /init/index.html http://info.cern.ch"]
+    volumeMounts:
+    - name: workdir
+      mountPath: "/init"
+  dnsPolicy: Default
+  volumes:
+  - name: workdir
+    emptyDir: {}
